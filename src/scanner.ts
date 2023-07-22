@@ -1,4 +1,4 @@
-import { Context } from "./context.ts";
+import { RuntimeContext } from "./runtime-context.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
 
@@ -8,7 +8,7 @@ export class Scanner {
   private current = 0;
   private line = 0;
 
-  constructor(private code: string, private context: Context) {}
+  constructor(private code: string, private context: RuntimeContext) {}
 
   scanTokens(): Token[] {
     while (!this.isAtEnd()) {
@@ -92,7 +92,7 @@ export class Scanner {
         } else if (this.isAlpha(char)) {
           this.identifier();
         } else {
-          this.context.error(this.line, `Unexpected character: ${char}`);
+          this.context.errorAtLine(this.line, `Unexpected character: ${char}`);
         }
         break;
     }
@@ -135,7 +135,7 @@ export class Scanner {
     }
 
     if (this.isAtEnd()) {
-      this.context.error(this.line, "Unterminated string.");
+      this.context.errorAtLine(this.line, "Unterminated string.");
       return;
     }
 

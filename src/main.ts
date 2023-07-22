@@ -1,4 +1,5 @@
-import { Context } from "./context.ts";
+import { Parser } from "./parser.ts";
+import { RuntimeContext } from "./runtime-context.ts";
 import { Scanner } from "./scanner.ts";
 
 async function main(args: string[]) {
@@ -14,7 +15,7 @@ async function main(args: string[]) {
 
 async function runFile(path: string) {
   const content = await Deno.readTextFile(path);
-  const context = new Context();
+  const context = new RuntimeContext();
   
   run(content, context);
   
@@ -24,7 +25,7 @@ async function runFile(path: string) {
 }
 
 function runInteractive() {
-  const context = new Context();
+  const context = new RuntimeContext();
 
   while (true) {
     const input = prompt("> ");
@@ -35,13 +36,17 @@ function runInteractive() {
   }
 }
 
-function run(code: string, context: Context) {
+function run(code: string, context: RuntimeContext) {
   const scanner = new Scanner(code, context)
   const tokens = scanner.scanTokens();
+  const parser = new Parser(tokens, context);
+  const expr = parser.parse();
 
-  for (const token of tokens) {
-    console.log(token);
+  if (context.hadError) {
+    return;
   }
+
+  console.log(expr);
 }
 
 await main(Deno.args);
