@@ -3,18 +3,33 @@
 	"name": "DumbScript",
 	"patterns": [
 		{
-			"include": "#keywords"
+			"include": "#comments"
+		},
+		{
+			"include": "#operators"
 		},
 		{
 			"include": "#strings"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#keywords"
 		}
 	],
 	"repository": {
 		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.dumbscript",
-				"match": "\\b(if|while|for|return)\\b"
-			}]
+			"patterns": [
+				{
+					"name": "keyword.control.dumbscript",
+					"match": "\\b(if|else|while|for|return)\\b"
+				},
+				{
+					"name": "keyword.operator.dumbscript",
+					"match": "\\b(and|or)\\b"
+				}
+			]
 		},
 		"strings": {
 			"name": "string.quoted.double.dumbscript",

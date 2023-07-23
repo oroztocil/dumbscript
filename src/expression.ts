@@ -5,6 +5,7 @@ export interface ExpressionVisitor<T> {
   visitLiteralExpr(expr: LiteralExpr): T;
   visitParenExpr(expr: ParenExpr): T;
   visitUnaryExpr(expr: UnaryExpr): T;
+  visitVariableExpr(expr: VariableExpr): T;
 }
 
 export interface Expression {
@@ -28,6 +29,14 @@ export class LiteralExpr implements Expression {
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitLiteralExpr(this);
+  }
+}
+
+export class VariableExpr implements Expression {
+  constructor(public readonly name: Token) {}
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitVariableExpr(this);
   }
 }
 

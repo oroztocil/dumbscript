@@ -6,13 +6,23 @@ import {
   LiteralExpr,
   ParenExpr,
   UnaryExpr,
+  VariableExpr,
 } from "./expression.ts";
 import { RuntimeContext } from "./runtime-context.ts";
-import { ExpressionStatement, PrintStatement, Statement, StatementVisitor } from "./statement.ts";
+import { Scope } from "./scope.ts";
+import {
+  DeclarationStatement,
+  ExpressionStatement,
+  PrintStatement,
+  Statement,
+  StatementVisitor,
+} from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
 
 export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor<unknown> {
+  private readonly globalScope = new Scope();
+
   constructor(
     private readonly context: RuntimeContext,
   ) {
@@ -37,6 +47,20 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     const value = this.evaluate(stmt.expr);
     console.log(value);
     return null;
+  }
+
+  visitDeclarationStatement(stmt: DeclarationStatement): unknown {
+    const value = stmt.initializer != null
+      ? this.evaluate(stmt.initializer)
+      : null;
+
+    this.globalScope.define(stmt.name.text, value);
+
+    return null;
+  }
+
+  visitVariableExpr(expr: VariableExpr): unknown {
+    return this.globalScope.get(expr.name);
   }
 
   visitBinaryExpr(expr: BinaryExpr): unknown {

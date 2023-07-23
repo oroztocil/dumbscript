@@ -1,4 +1,4 @@
-var answer = 42;
-var name = "Bob";
+let answer = 42;
+let name = "Bob";
 print answer;
 print "Hello, " + name;

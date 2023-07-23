@@ -1,7 +1,7 @@
 import { ParserError } from "./errors.ts";
-import { BinaryExpr, Expression, LiteralExpr, ParenExpr, UnaryExpr } from "./expression.ts";
+import { BinaryExpr, Expression, LiteralExpr, ParenExpr, UnaryExpr, VariableExpr } from "./expression.ts";
 import { RuntimeContext } from "./runtime-context.ts";
-import { ExpressionStatement, PrintStatement, Statement } from "./statement.ts";
+import { DeclarationStatement, ExpressionStatement, PrintStatement, Statement } from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
 
@@ -16,7 +16,11 @@ export class Parser {
     const statements: Statement[] = [];
     try {
       while (!this.isAtEnd()) {
-        statements.push(this.statement());
+        const stmt = this.declaration();
+
+        if (stmt != null) {
+          statements.push(stmt);
+        }
       }
     } catch {
       return statements;
@@ -32,16 +36,42 @@ export class Parser {
     return this.expressionStatement();
   }
 
+  private expressionStatement() {
+    const expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expected ';' after expression statement.");
+    return new ExpressionStatement(expr);
+  }
+
   private print(): PrintStatement {
     const expr = this.expression();
     this.consume(TokenType.SEMICOLON, "Expected ';' after print value.");
     return new PrintStatement(expr);
   }
 
-  private expressionStatement() {
-    const expr = this.expression();
-    this.consume(TokenType.SEMICOLON, "Expected ';' after expression statement.");
-    return new ExpressionStatement(expr);
+  private declaration(): Statement | null {
+    try {
+      if (this.match(TokenType.LET)) {
+        return this.letDeclaration();
+      }
+
+      return this.statement();
+    } catch (err) {
+      if (err instanceof ParserError) {
+        this.synchronize();
+      }
+
+      return null;
+    }
+  }
+
+  private letDeclaration(): DeclarationStatement {
+    const name = this.consume(TokenType.IDENTIFIER, "Expected variable name.");
+    const initializer = this.match(TokenType.EQUAL)
+      ? this.expression()
+      : null;
+      
+      this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.");
+      return new DeclarationStatement(name, initializer);
   }
 
   private expression(): Expression {
@@ -116,6 +146,10 @@ export class Parser {
 
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new LiteralExpr(this.previous().literal!);
+    }
+
+    if (this.match(TokenType.IDENTIFIER)) {
+      return new VariableExpr(this.previous());
     }
 
     if (this.match(TokenType.LEFT_PAREN)) {
