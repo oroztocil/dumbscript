@@ -1,0 +1,25 @@
+{
+  "name": "dumbscript",
+  "displayName": "DumbScript",
+  "description": "Editor support for the DumbScript language.",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "dumbscript",
+      "aliases": ["DumbScript", "dumbscript"],
+      "extensions": [".ds"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "dumbscript",
+      "scopeName": "source.dumbscript",
+      "path": "./syntaxes/dumbscript.tmLanguage.json"
+    }]
+  }
+}
