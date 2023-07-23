@@ -24,9 +24,7 @@ export class BinaryExpr implements Expression {
 }
 
 export class LiteralExpr implements Expression {
-  constructor(
-    public readonly value: string | number | boolean | null,
-  ) {}
+  constructor(public readonly value: string | number | boolean | null) {}
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitLiteralExpr(this);
@@ -46,7 +44,7 @@ export class ParenExpr implements Expression {
 export class UnaryExpr implements Expression {
   constructor(
     public readonly operator: Token,
-    public readonly right: Expression
+    public readonly right: Expression,
   ) {}
 
   accept<T>(visitor: ExpressionVisitor<T>): T {

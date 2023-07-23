@@ -1,3 +1,5 @@
-print "hello!"
+print "hello!";
 // This is comment
-print 42
+print 42;
+print true;
+print null;

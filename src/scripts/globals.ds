@@ -1,0 +1,4 @@
+var answer = 42;
+var name = "Bob";
+print answer;
+print "Hello, " + name;

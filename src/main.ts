@@ -1,3 +1,4 @@
+import { Interpreter } from "./interpreter.ts";
 import { Parser } from "./parser.ts";
 import { RuntimeContext } from "./runtime-context.ts";
 import { Scanner } from "./scanner.ts";
@@ -22,6 +23,10 @@ async function runFile(path: string) {
   if (context.hadError) {
     Deno.exit(65);
   }
+
+  if (context.hadRuntimeError) {
+    Deno.exit(70);
+  }
 }
 
 function runInteractive() {
@@ -40,13 +45,16 @@ function run(code: string, context: RuntimeContext) {
   const scanner = new Scanner(code, context)
   const tokens = scanner.scanTokens();
   const parser = new Parser(tokens, context);
-  const expr = parser.parse();
+  const statements = parser.parse();
 
   if (context.hadError) {
     return;
   }
 
-  console.log(expr);
+  console.log(statements);
+
+  const interpreter = new Interpreter(context);
+  interpreter.interpret(statements);
 }
 
 await main(Deno.args);

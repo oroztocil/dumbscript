@@ -1,5 +1,7 @@
-import { BinaryExpr, Expression, LiteralExpr, ParenExpr, UnaryExpr } from "./expressions.ts";
+import { ParserError } from "./errors.ts";
+import { BinaryExpr, Expression, LiteralExpr, ParenExpr, UnaryExpr } from "./expression.ts";
 import { RuntimeContext } from "./runtime-context.ts";
+import { ExpressionStatement, PrintStatement, Statement } from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
 
@@ -10,12 +12,36 @@ export class Parser {
     private current: number = 0,
   ) {}
 
-  parse(): Expression | null {
+  parse(): Statement[] {
+    const statements: Statement[] = [];
     try {
-      return this.expression();
+      while (!this.isAtEnd()) {
+        statements.push(this.statement());
+      }
     } catch {
-      return null;
+      return statements;
     }
+    return statements;
+  }
+
+  private statement(): Statement {
+    if (this.match(TokenType.PRINT)) {
+      return this.print();
+    }
+
+    return this.expressionStatement();
+  }
+
+  private print(): PrintStatement {
+    const expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expected ';' after print value.");
+    return new PrintStatement(expr);
+  }
+
+  private expressionStatement() {
+    const expr = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expected ';' after expression statement.");
+    return new ExpressionStatement(expr);
   }
 
   private expression(): Expression {
@@ -86,7 +112,7 @@ export class Parser {
   private literal(): Expression {
     if (this.match(TokenType.FALSE)) return new LiteralExpr(false);
     if (this.match(TokenType.TRUE)) return new LiteralExpr(true);
-    if (this.match(TokenType.NIL)) return new LiteralExpr(null);
+    if (this.match(TokenType.NULL)) return new LiteralExpr(null);
 
     if (this.match(TokenType.NUMBER, TokenType.STRING)) {
       return new LiteralExpr(this.previous().literal!);
@@ -159,7 +185,7 @@ export class Parser {
       switch (this.peek().type) {
         case TokenType.CLASS:
         case TokenType.FUN:
-        case TokenType.VAR:
+        case TokenType.LET:
         case TokenType.FOR:
         case TokenType.IF:
         case TokenType.WHILE:
@@ -174,6 +200,6 @@ export class Parser {
 
   private error(token: Token, message: string) {
     this.context.errorAtToken(token, message);
-    return new Error();
+    return new ParserError();
   }
 }
