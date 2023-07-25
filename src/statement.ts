@@ -3,8 +3,10 @@ import { Token } from "./token.ts";
 
 export interface StatementVisitor<T> {
   visitExpressionStatement(stmt: ExpressionStatement): T;
-  visitPrintStatement(stmt: PrintStatement): T;
-  visitDeclarationStatement(stmt: DeclarationStatement): T;
+  visitPrint(stmt: PrintStatement): T;
+  visitConstDeclaration(stms: ConstDeclarationStatement): T;
+  visitMutDeclaration(stmt: MutDeclarationStatement): T;
+  visitBlock(stmt: BlockStatement): T;
 }
 
 export interface Statement {
@@ -12,7 +14,7 @@ export interface Statement {
 }
 
 export class ExpressionStatement implements Statement {
-  constructor(public readonly expr: Expression) {}
+  constructor(public readonly expr: Expression) { }
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitExpressionStatement(this);
@@ -20,19 +22,39 @@ export class ExpressionStatement implements Statement {
 }
 
 export class PrintStatement implements Statement {
-  constructor(public readonly expr: Expression) {}
-  
+  constructor(public readonly expr: Expression) { }
+
   accept<T>(visitor: StatementVisitor<T>): T {
-    return visitor.visitPrintStatement(this);
+    return visitor.visitPrint(this);
   }
 }
 
-export class DeclarationStatement implements Statement {
+export class ConstDeclarationStatement implements Statement {
   constructor(
     public readonly name: Token,
-    public readonly initializer: Expression | null) {}
-  
+    public readonly initializer: Expression
+  ) { }
+
   accept<T>(visitor: StatementVisitor<T>): T {
-    return visitor.visitDeclarationStatement(this);
+    return visitor.visitConstDeclaration(this);
+  }
+}
+
+export class MutDeclarationStatement implements Statement {
+  constructor(
+    public readonly name: Token,
+    public readonly initializer: Expression | null
+  ) { }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitMutDeclaration(this);
+  }
+}
+
+export class BlockStatement implements Statement {
+  constructor(public readonly statements: Statement[]) { }
+
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitBlock(this);
   }
 }

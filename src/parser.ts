@@ -1,7 +1,7 @@
 import { ParserError } from "./errors.ts";
-import { BinaryExpr, Expression, LiteralExpr, ParenExpr, UnaryExpr, VariableExpr } from "./expression.ts";
+import { BinaryExpr, Expression, LiteralExpr, MutAssignmentExpr, ParenExpr, UnaryExpr, VariableExpr } from "./expression.ts";
 import { RuntimeContext } from "./runtime-context.ts";
-import { DeclarationStatement, ExpressionStatement, PrintStatement, Statement } from "./statement.ts";
+import { MutDeclarationStatement, ExpressionStatement, PrintStatement, Statement, ConstDeclarationStatement, BlockStatement } from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
 
@@ -10,7 +10,7 @@ export class Parser {
     private readonly tokens: Token[],
     private readonly context: RuntimeContext,
     private current: number = 0,
-  ) {}
+  ) { }
 
   parse(): Statement[] {
     const statements: Statement[] = [];
@@ -28,12 +28,47 @@ export class Parser {
     return statements;
   }
 
+  private declaration(): Statement | null {
+    try {
+      if (this.match(TokenType.MUT)) {
+        return this.mutDeclaration();
+      } else if (this.match(TokenType.CONST)) {
+        return this.constDeclaration();
+      }
+
+      return this.statement();
+    } catch (err) {
+      if (err instanceof ParserError) {
+        this.synchronize();
+      }
+
+      return null;
+    }
+  }
+
   private statement(): Statement {
     if (this.match(TokenType.PRINT)) {
       return this.print();
+    } else if (this.match(TokenType.LEFT_BRACE)) {
+      const statements = this.block();
+      return new BlockStatement(statements);
     }
 
     return this.expressionStatement();
+  }
+
+  private block(): Statement[] {
+    const statements: Statement[] = [];
+
+    while (!this.check(TokenType.RIGHT_BRACE) && !this.isAtEnd()) {
+      const stmt = this.declaration();
+      if (stmt != null) {
+        statements.push(stmt);
+      }
+    }
+
+    this.consume(TokenType.RIGHT_BRACE, "Expected '}' after block.")
+    return statements;
   }
 
   private expressionStatement() {
@@ -48,34 +83,45 @@ export class Parser {
     return new PrintStatement(expr);
   }
 
-  private declaration(): Statement | null {
-    try {
-      if (this.match(TokenType.LET)) {
-        return this.letDeclaration();
-      }
+  private constDeclaration(): ConstDeclarationStatement {
+    const name = this.consume(TokenType.IDENTIFIER, "Expected variable name.");
+    this.consume(TokenType.EQUAL, "Const variable must be initialized.");
+    const initializer = this.expression();
+    this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.");
 
-      return this.statement();
-    } catch (err) {
-      if (err instanceof ParserError) {
-        this.synchronize();
-      }
-
-      return null;
-    }
+    return new ConstDeclarationStatement(name, initializer);
   }
 
-  private letDeclaration(): DeclarationStatement {
+  private mutDeclaration(): MutDeclarationStatement {
     const name = this.consume(TokenType.IDENTIFIER, "Expected variable name.");
     const initializer = this.match(TokenType.EQUAL)
       ? this.expression()
       : null;
-      
-      this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.");
-      return new DeclarationStatement(name, initializer);
+
+    this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.");
+    return new MutDeclarationStatement(name, initializer);
+  }
+
+  private mutAssignment(): Expression {
+    const expr = this.equality();
+
+    if (this.match(TokenType.EQUAL)) {
+      const equals = this.previous();
+      const value = this.mutAssignment();
+
+      if (expr instanceof VariableExpr) {
+        const name = expr.name;
+        return new MutAssignmentExpr(name, value);
+      }
+
+      throw this.error(equals, "Invalid assignment target.");
+    }
+
+    return expr;
   }
 
   private expression(): Expression {
-    return this.equality();
+    return this.mutAssignment();
   }
 
   private equality(): Expression {
@@ -219,7 +265,7 @@ export class Parser {
       switch (this.peek().type) {
         case TokenType.CLASS:
         case TokenType.FUN:
-        case TokenType.LET:
+        case TokenType.MUT:
         case TokenType.FOR:
         case TokenType.IF:
         case TokenType.WHILE:

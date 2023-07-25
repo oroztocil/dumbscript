@@ -1,4 +1,15 @@
-let answer = 42;
-let name = "Bob";
+const answer = 42;
+
+mut name = "Bob";
+name = "Bobek";
+
+mut later;
+
 print answer;
 print "Hello, " + name;
+
+print later;
+later = "See ya!";
+print later;
+
+answer = 420;

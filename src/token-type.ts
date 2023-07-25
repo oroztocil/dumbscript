@@ -42,7 +42,8 @@ export const enum TokenType {
   SUPER,
   THIS,
   TRUE,
-  LET,
+  MUT,
+  CONST,
   WHILE,
 
   EOF,

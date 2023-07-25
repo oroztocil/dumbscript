@@ -21,7 +21,12 @@ export class RuntimeContext {
 
   runtimeError(error: RuntimeError) {
     this.hadRuntimeError = true;
-    console.error(`${error.message}\n[line ${error.token.line}]`);
+
+    if (error?.token != null) {
+      console.error(`[Runtime error at line ${error.token.line}]: ${error.message}`);
+    } else {
+      console.error(error);
+    }
   }
 
   private report(line: number, where: string, message: string) {

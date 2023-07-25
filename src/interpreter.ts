@@ -4,6 +4,7 @@ import {
   Expression,
   ExpressionVisitor,
   LiteralExpr,
+  MutAssignmentExpr,
   ParenExpr,
   UnaryExpr,
   VariableExpr,
@@ -11,22 +12,22 @@ import {
 import { RuntimeContext } from "./runtime-context.ts";
 import { Scope } from "./scope.ts";
 import {
-  DeclarationStatement,
+  MutDeclarationStatement,
   ExpressionStatement,
   PrintStatement,
   Statement,
   StatementVisitor,
+  ConstDeclarationStatement,
+  BlockStatement,
 } from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
 
 export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor<unknown> {
-  private readonly globalScope = new Scope();
+  private readonly globalScope = new Scope(null);
+  private currentScope = this.globalScope;
 
-  constructor(
-    private readonly context: RuntimeContext,
-  ) {
-  }
+  constructor(private readonly context: RuntimeContext) { }
 
   interpret(statements: Statement[]) {
     try {
@@ -38,29 +39,46 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     }
   }
 
+  visitBlock(stmt: BlockStatement): unknown {
+    this.executeBlock(stmt.statements, new Scope(this.currentScope));
+    return null;
+  }
+
   visitExpressionStatement(stmt: ExpressionStatement): unknown {
     this.evaluate(stmt.expr);
     return undefined;
   }
 
-  visitPrintStatement(stmt: PrintStatement): unknown {
+  visitPrint(stmt: PrintStatement): unknown {
     const value = this.evaluate(stmt.expr);
     console.log(value);
     return null;
   }
 
-  visitDeclarationStatement(stmt: DeclarationStatement): unknown {
+  visitConstDeclaration(stmt: ConstDeclarationStatement): unknown {
+    const value = this.evaluate(stmt.initializer);
+    this.globalScope.define(stmt.name, value, false);
+    return null;
+  }
+
+  visitMutDeclaration(stmt: MutDeclarationStatement): unknown {
     const value = stmt.initializer != null
       ? this.evaluate(stmt.initializer)
       : null;
 
-    this.globalScope.define(stmt.name.text, value);
-
+    this.globalScope.define(stmt.name, value, true);
     return null;
   }
 
+
+  visitMutAssignment(expr: MutAssignmentExpr): unknown {
+    const value = this.evaluate(expr.value);
+    this.globalScope.assign(expr.name, value);
+    return value;
+  }
+
   visitVariableExpr(expr: VariableExpr): unknown {
-    return this.globalScope.get(expr.name);
+    return this.globalScope.get(expr.name).value;
   }
 
   visitBinaryExpr(expr: BinaryExpr): unknown {
@@ -129,6 +147,19 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
 
   private execute(stmt: Statement) {
     stmt.accept(this);
+  }
+
+  private executeBlock(statements: Statement[], blockScope: Scope) {
+    const prevScope = this.currentScope;
+
+    try {
+      this.currentScope = blockScope;
+      for (const stmt of statements) {
+        this.execute(stmt);
+      }
+    } finally {
+      this.currentScope = prevScope;
+    }
   }
 
   private evaluate(expr: Expression): unknown {

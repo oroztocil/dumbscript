@@ -17,9 +17,10 @@ async function main(args: string[]) {
 async function runFile(path: string) {
   const content = await Deno.readTextFile(path);
   const context = new RuntimeContext();
-  
-  run(content, context);
-  
+  const interpreter = new Interpreter(context);
+
+  run(content, interpreter, context);
+
   if (context.hadError) {
     Deno.exit(65);
   }
@@ -35,13 +36,16 @@ function runInteractive() {
   while (true) {
     const input = prompt("> ");
     if (input != null) {
-      run(input, context);
+      const interpreter = new Interpreter(context);
+
+      run(input, interpreter, context);
+
       context.hadError = false;
     } else break;
   }
 }
 
-function run(code: string, context: RuntimeContext) {
+function run(code: string, interpreter: Interpreter, context: RuntimeContext) {
   const scanner = new Scanner(code, context)
   const tokens = scanner.scanTokens();
   const parser = new Parser(tokens, context);
@@ -53,7 +57,6 @@ function run(code: string, context: RuntimeContext) {
 
   console.log(statements);
 
-  const interpreter = new Interpreter(context);
   interpreter.interpret(statements);
 }
 

@@ -6,6 +6,7 @@ export interface ExpressionVisitor<T> {
   visitParenExpr(expr: ParenExpr): T;
   visitUnaryExpr(expr: UnaryExpr): T;
   visitVariableExpr(expr: VariableExpr): T;
+  visitMutAssignment(stmt: MutAssignmentExpr): T;
 }
 
 export interface Expression {
@@ -58,5 +59,15 @@ export class UnaryExpr implements Expression {
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitUnaryExpr(this);
+  }
+}
+
+export class MutAssignmentExpr implements Expression {
+  constructor(
+    public readonly name: Token,
+    public readonly value: Expression) {}
+  
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitMutAssignment(this);
   }
 }
