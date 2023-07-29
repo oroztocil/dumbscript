@@ -57,7 +57,7 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
 
   visitConstDeclaration(stmt: ConstDeclarationStatement): unknown {
     const value = this.evaluate(stmt.initializer);
-    this.globalScope.define(stmt.name, value, false);
+    this.currentScope.define(stmt.name, value, false);
     return null;
   }
 
@@ -66,19 +66,19 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
       ? this.evaluate(stmt.initializer)
       : null;
 
-    this.globalScope.define(stmt.name, value, true);
+    this.currentScope.define(stmt.name, value, true);
     return null;
   }
 
 
   visitMutAssignment(expr: MutAssignmentExpr): unknown {
     const value = this.evaluate(expr.value);
-    this.globalScope.assign(expr.name, value);
+    this.currentScope.assign(expr.name, value);
     return value;
   }
 
   visitVariableExpr(expr: VariableExpr): unknown {
-    return this.globalScope.get(expr.name).value;
+    return this.currentScope.get(expr.name).value;
   }
 
   visitBinaryExpr(expr: BinaryExpr): unknown {

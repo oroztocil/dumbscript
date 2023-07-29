@@ -15,6 +15,7 @@ export class Scope {
     if (this.variables[name.text] == undefined) {
       this.variables[name.text] = { value, isMutable };
     } else {
+      console.log("SCOPE: ", this);
       throw new RuntimeError(name, `Already defined variable '${name.text}'.`);
     }
   }
