@@ -5,11 +5,11 @@ name = "Bobek";
 
 mut later;
 
-print answer;
-print "Hello, " + name;
+print(answer);
+print("Hello, " + name);
 
-print later;
+print(later);
 later = "See ya!";
-print later;
+print(later);
 
 answer = 420;

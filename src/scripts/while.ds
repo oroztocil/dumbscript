@@ -1,16 +1,16 @@
 mut answer = 35;
 
 while (answer != 42) {
-    print answer + "? That does not seem correct";
+    print(answer + "? That does not seem correct");
     answer = answer + 1;
 }
 
-print answer + "? Ahhh yess";
+print(answer + "? Ahhh yess");
 
 answer = 45;
 
 while (true) {
-    print answer + "? That does not seem correct";
+    print(answer + "? That does not seem correct");
     answer = answer - 1;
 
     if (answer == 42) {
@@ -18,4 +18,4 @@ while (true) {
     }
 }
 
-print answer + "? Ahhh yess";
+print(answer + "? Ahhh yess");

@@ -1,9 +1,9 @@
 const answer = 42;
 
 if (answer == 42) {
-    print "yess";
+    print("yess";
 } else {
-    print "nooo";
+    print("nooo");
 }
 
-if (answer != 42) print "yess single-line"; else print "nooo single-line";
+if (answer != 42) print("yess single-line"); else print("nooo single-line");

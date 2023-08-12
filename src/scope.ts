@@ -1,8 +1,10 @@
 import { RuntimeError } from "./errors.ts";
+import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
+import { Value } from "./value.ts";
 
 interface Variable {
-  value: unknown;
+  value: Value;
   isMutable: boolean;
 }
 
@@ -11,16 +13,20 @@ export class Scope {
 
   constructor(public readonly parent: Scope | null) {}
 
-  define(name: Token, value: unknown, isMutable: boolean) {
+  define(name: Token | string, value: Value, isMutable: boolean) {
+    if (typeof name === "string") {
+      name = { text: name, line: 0, type: TokenType.IDENTIFIER };
+    }
+
     if (this.variables[name.text] == undefined) {
       this.variables[name.text] = { value, isMutable };
     } else {
-      console.log("SCOPE: ", this);
+      console.error("Error while in scope: ", this);
       throw new RuntimeError(name, `Already defined variable '${name.text}'.`);
     }
   }
 
-  assign(name: Token, value: unknown) {
+  assign(name: Token, value: Value) {
     const variable = this.variables[name.text];
 
     if (variable != undefined) {

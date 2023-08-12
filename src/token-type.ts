@@ -37,7 +37,6 @@ export const enum TokenType {
   IF,
   NULL,
   OR,
-  PRINT,
   RETURN,
   SUPER,
   THIS,

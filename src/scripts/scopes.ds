@@ -7,14 +7,14 @@ mut c = "global c";
   {
     mut a = "inner a";
     b = "modified b";
-    print a;
-    print b;
-    print c;
+    print(a);
+    print(b);
+    print(c);
   }
-  print a;
-  print b;
-  print c;
+  print(a);
+  print(b);
+  print(c);
 }
-print a;
-print b;
-print c;
+print(a);
+print(b);
+print(c);

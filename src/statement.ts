@@ -3,7 +3,6 @@ import { Token } from "./token.ts";
 
 export interface StatementVisitor<T> {
   visitExpressionStatement(stmt: ExpressionStatement): T;
-  visitPrint(stmt: PrintStatement): T;
   visitConstDeclaration(stms: ConstDeclarationStatement): T;
   visitMutDeclaration(stmt: MutDeclarationStatement): T;
   visitBlock(stmt: BlockStatement): T;
@@ -21,14 +20,6 @@ export class ExpressionStatement implements Statement {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitExpressionStatement(this);
-  }
-}
-
-export class PrintStatement implements Statement {
-  constructor(public readonly expr: Expression) {}
-
-  accept<T>(visitor: StatementVisitor<T>): T {
-    return visitor.visitPrint(this);
   }
 }
 

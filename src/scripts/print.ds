@@ -1,5 +1,5 @@
-print "hello!";
+print("hello!");
+print(42);
+print(true);
+print(null);
 // This is comment
-print 42;
-print true;
-print null;

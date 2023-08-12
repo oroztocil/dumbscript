@@ -1,6 +1,7 @@
 import { ParserError } from "./errors.ts";
 import {
   BinaryExpr,
+  CallExpr,
   Expression,
   LiteralExpr,
   LogicalExpr,
@@ -17,7 +18,6 @@ import {
   ExpressionStatement,
   IfStatement,
   MutDeclarationStatement,
-  PrintStatement,
   Statement,
   WhileStatement,
 } from "./statement.ts";
@@ -29,7 +29,7 @@ export class Parser {
     private readonly tokens: Token[],
     private readonly context: RuntimeContext,
     private current: number = 0,
-  ) {}
+  ) { }
 
   parse(): Statement[] {
     const statements: Statement[] = [];
@@ -80,10 +80,6 @@ export class Parser {
 
     if (this.match(TokenType.BREAK)) {
       return this.break();
-    }
-
-    if (this.match(TokenType.PRINT)) {
-      return this.print();
     }
 
     if (this.match(TokenType.LEFT_BRACE)) {
@@ -140,8 +136,8 @@ export class Parser {
     const initializer = this.match(TokenType.MUT)
       ? this.mutDeclaration()
       : !this.match(TokenType.SEMICOLON)
-      ? this.expressionStatement()
-      : null;
+        ? this.expressionStatement()
+        : null;
 
     const condition = !this.check(TokenType.SEMICOLON) ? this.expression() : new LiteralExpr(true);
 
@@ -169,12 +165,6 @@ export class Parser {
   private break(): BreakStatement {
     this.consume(TokenType.SEMICOLON, "Expected ';' after 'break'.");
     return new BreakStatement();
-  }
-
-  private print(): PrintStatement {
-    const expr = this.expression();
-    this.consume(TokenType.SEMICOLON, "Expected ';' after print value.");
-    return new PrintStatement(expr);
   }
 
   private constDeclaration(): ConstDeclarationStatement {
@@ -297,8 +287,36 @@ export class Parser {
       return new UnaryExpr(operator, right);
     }
 
-    return this.literal();
+    return this.call();
     // throw this.error(this.peek(), "Function calls not implemented.");
+  }
+
+  private call(): Expression {
+    let expr = this.literal();
+
+    while (true) {
+      if (this.match(TokenType.LEFT_PAREN)) {
+        expr = this.callArgs(expr);
+      } else {
+        break;
+      }
+    }
+
+    return expr;
+  }
+
+  private callArgs(callee: Expression): Expression {
+    const args: Expression[] = [];
+
+    if (!this.check(TokenType.RIGHT_PAREN)) {
+      do {
+        args.push(this.expression());
+      } while (this.match(TokenType.COMMA));
+    }
+
+    const paren = this.consume(TokenType.RIGHT_PAREN, "Expected ')' after call arguments.");
+
+    return new CallExpr(callee, args, paren);
   }
 
   private literal(): Expression {
@@ -385,7 +403,6 @@ export class Parser {
         case TokenType.FOR:
         case TokenType.IF:
         case TokenType.WHILE:
-        case TokenType.PRINT:
         case TokenType.RETURN:
           return;
       }

@@ -1,6 +1,8 @@
+import { Callable } from "./callable.ts";
 import { BreakCalledError, RuntimeError } from "./errors.ts";
 import {
   BinaryExpr,
+  CallExpr,
   Expression,
   ExpressionVisitor,
   LiteralExpr,
@@ -14,24 +16,39 @@ import { RuntimeContext } from "./runtime-context.ts";
 import { Scope } from "./scope.ts";
 import {
   BlockStatement,
-  BreakStatement,
   ConstDeclarationStatement,
   ExpressionStatement,
   IfStatement,
   MutDeclarationStatement,
-  PrintStatement,
   Statement,
   StatementVisitor,
   WhileStatement,
 } from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
+import { Value } from "./value.ts";
 
-export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor<unknown> {
+export class Interpreter implements ExpressionVisitor<Value>, StatementVisitor<unknown> {
   private readonly globalScope = new Scope(null);
   private currentScope = this.globalScope;
 
-  constructor(private readonly context: RuntimeContext) {}
+  constructor(private readonly context: RuntimeContext) {
+    const clockFunc: Callable = {
+      arity: () => 0,
+      call: (): Value => Date.now()
+    };
+
+    const printFunc: Callable = {
+      arity: () => 1,
+      call: (_, args): Value => {
+        console.log(args[0]);
+        return null;
+      } 
+    }
+
+    this.globalScope.define("clock", clockFunc, false);
+    this.globalScope.define("print", printFunc, false);
+  }
 
   interpret(statements: Statement[]) {
     try {
@@ -83,12 +100,6 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     throw new BreakCalledError();
   }
 
-  visitPrint(stmt: PrintStatement): unknown {
-    const value = this.evaluate(stmt.expr);
-    console.log(value);
-    return null;
-  }
-
   visitConstDeclaration(stmt: ConstDeclarationStatement): unknown {
     const value = this.evaluate(stmt.initializer);
     this.currentScope.define(stmt.name, value, false);
@@ -102,17 +113,17 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     return null;
   }
 
-  visitMutAssignment(expr: MutAssignmentExpr): unknown {
+  visitMutAssignment(expr: MutAssignmentExpr): Value {
     const value = this.evaluate(expr.value);
     this.currentScope.assign(expr.name, value);
     return value;
   }
 
-  visitVariableExpr(expr: VariableExpr): unknown {
+  visitVariableExpr(expr: VariableExpr): Value {
     return this.currentScope.get(expr.name).value;
   }
 
-  visitBinaryExpr(expr: BinaryExpr): unknown {
+  visitBinaryExpr(expr: BinaryExpr): Value {
     const left = this.evaluate(expr.left);
     const right = this.evaluate(expr.right);
 
@@ -159,30 +170,30 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     return null;
   }
 
-  visitLogicalExpr(expr: LogicalExpr): unknown {
+  visitLogicalExpr(expr: LogicalExpr): Value {
     const left = this.evaluate(expr.left);
     const leftIsTruthy = this.isTruthy(left);
-    
+
     if (expr.operator.type == TokenType.AND && !leftIsTruthy) {
       return left;
     }
 
     if (expr.operator.type == TokenType.OR && leftIsTruthy) {
-        return left;
+      return left;
     }
 
     return this.evaluate(expr.right);
   }
 
-  visitLiteralExpr(expr: LiteralExpr): unknown {
+  visitLiteralExpr(expr: LiteralExpr): Value {
     return expr.value;
   }
 
-  visitParenExpr(expr: ParenExpr): unknown {
+  visitParenExpr(expr: ParenExpr): Value {
     return this.evaluate(expr.innerExpr);
   }
 
-  visitUnaryExpr(expr: UnaryExpr): unknown {
+  visitUnaryExpr(expr: UnaryExpr): Value {
     const right = this.evaluate(expr.right);
 
     switch (expr.operator.type) {
@@ -193,6 +204,18 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     }
 
     return null;
+  }
+
+  visitCall(expr: CallExpr): Value {
+    const callee = this.evaluate(expr.callee);
+
+    const argValues: Value[] = [];
+
+    for (const arg of expr.args) {
+      argValues.push(this.evaluate(arg));
+    }
+
+    return (callee as Callable).call(this, argValues);
   }
 
   private execute(stmt: Statement) {
@@ -212,11 +235,11 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     }
   }
 
-  private evaluate(expr: Expression): unknown {
+  private evaluate(expr: Expression): Value {
     return expr.accept(this);
   }
 
-  private isTruthy(value: unknown): boolean {
+  private isTruthy(value: Value): boolean {
     if (value == null) {
       return false;
     } else if (typeof value === "boolean") {
@@ -226,11 +249,11 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     }
   }
 
-  private isEqual(a: unknown, b: unknown): boolean {
+  private isEqual(a: Value, b: Value): boolean {
     return a === b;
   }
 
-  private checkNumberOperands(operator: Token, ...operands: unknown[]) {
+  private checkNumberOperands(operator: Token, ...operands: Value[]) {
     if (operands.some((op) => typeof op !== "number")) {
       throw new RuntimeError(operator, "Operand must be a number.");
     }

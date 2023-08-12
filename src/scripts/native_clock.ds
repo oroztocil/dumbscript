@@ -1,0 +1,6 @@
+const time = clock();
+print(time / 1000 + " seconds");
+print(time / 1000 / 60 + " minutes");
+print(time / 1000 / 60 / 60 + " hours");
+print(time / 1000 / 60 / 60 / 24 + " days");
+print(time / 1000 / 60 / 60 / 24 / 365 + " years");
