@@ -3,3 +3,16 @@ for (mut x = 35; x < 42; x = x + 1) {
 }
 
 print "I have the answer now!";
+
+mut answer = 48;
+
+for (;;) {
+    answer = answer - 2;
+    print "Computing the answer (" + answer + ")";
+
+    if (answer <= 42) {
+        break;
+    }
+}
+
+print "I have the answer now!";

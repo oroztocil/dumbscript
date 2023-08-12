@@ -10,3 +10,5 @@ export class RuntimeError extends Error {
     super(message);
   }
 }
+
+export class BreakCalledError extends Error {}

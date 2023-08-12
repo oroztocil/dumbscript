@@ -208,6 +208,7 @@ export class Scanner {
 
 const keywords: Record<string, TokenType> = {
   and: TokenType.AND,
+  break: TokenType.BREAK,
   class: TokenType.CLASS,
   const: TokenType.CONST,
   else: TokenType.ELSE,

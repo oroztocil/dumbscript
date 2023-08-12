@@ -45,6 +45,7 @@ export const enum TokenType {
   MUT,
   CONST,
   WHILE,
+  BREAK,
 
   EOF,
 }

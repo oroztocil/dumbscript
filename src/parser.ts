@@ -12,6 +12,7 @@ import {
 import { RuntimeContext } from "./runtime-context.ts";
 import {
   BlockStatement,
+  BreakStatement,
   ConstDeclarationStatement,
   ExpressionStatement,
   IfStatement,
@@ -66,15 +67,19 @@ export class Parser {
 
   private statement(): Statement {
     if (this.match(TokenType.IF)) {
-      return this.ifStatement();
+      return this.if();
     }
 
     if (this.match(TokenType.WHILE)) {
-      return this.whileStatement();
+      return this.while();
     }
 
     if (this.match(TokenType.FOR)) {
-      return this.forStatement();
+      return this.for();
+    }
+
+    if (this.match(TokenType.BREAK)) {
+      return this.break();
     }
 
     if (this.match(TokenType.PRINT)) {
@@ -109,7 +114,7 @@ export class Parser {
     return new ExpressionStatement(expr);
   }
 
-  private ifStatement(): IfStatement {
+  private if(): IfStatement {
     this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'.");
     const condition = this.expression();
     this.consume(TokenType.RIGHT_PAREN, "Expected ')' after 'if' condition.");
@@ -120,7 +125,7 @@ export class Parser {
     return new IfStatement(condition, thenBranch, elseBranch);
   }
 
-  private whileStatement(): WhileStatement {
+  private while(): WhileStatement {
     this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'while'.");
     const condition = this.expression();
     this.consume(TokenType.RIGHT_PAREN, "Expected ')' after 'while' condition.");
@@ -130,7 +135,7 @@ export class Parser {
     return new WhileStatement(condition, body);
   }
 
-  private forStatement(): Statement {
+  private for(): Statement {
     this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'for'.");
     const initializer = this.match(TokenType.MUT)
       ? this.mutDeclaration()
@@ -159,6 +164,11 @@ export class Parser {
     }
 
     return body;
+  }
+
+  private break(): BreakStatement {
+    this.consume(TokenType.SEMICOLON, "Expected ';' after 'break'.");
+    return new BreakStatement();
   }
 
   private print(): PrintStatement {

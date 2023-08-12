@@ -9,6 +9,7 @@ export interface StatementVisitor<T> {
   visitBlock(stmt: BlockStatement): T;
   visitIf(stmt: IfStatement): T;
   visitWhile(stmt: WhileStatement): T;
+  visitBreak(): T;
 }
 
 export interface Statement {
@@ -81,5 +82,11 @@ export class WhileStatement implements Statement {
 
   accept<T>(visitor: StatementVisitor<T>): T {
     return visitor.visitWhile(this);
+  }
+}
+
+export class BreakStatement implements Statement {
+  accept<T>(visitor: StatementVisitor<T>): T {
+    return visitor.visitBreak();
   }
 }

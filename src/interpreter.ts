@@ -1,4 +1,4 @@
-import { RuntimeError } from "./errors.ts";
+import { BreakCalledError, RuntimeError } from "./errors.ts";
 import {
   BinaryExpr,
   Expression,
@@ -14,6 +14,7 @@ import { RuntimeContext } from "./runtime-context.ts";
 import { Scope } from "./scope.ts";
 import {
   BlockStatement,
+  BreakStatement,
   ConstDeclarationStatement,
   ExpressionStatement,
   IfStatement,
@@ -64,10 +65,22 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
 
   visitWhile(stmt: WhileStatement): unknown {
     while (this.isTruthy(this.evaluate(stmt.condition))) {
-      this.execute(stmt.body);
+      try {
+        this.execute(stmt.body);
+      } catch (err) {
+        if (err instanceof BreakCalledError) {
+          break;
+        } else {
+          throw err;
+        }
+      }
     }
 
     return null;
+  }
+
+  visitBreak(): unknown {
+    throw new BreakCalledError();
   }
 
   visitPrint(stmt: PrintStatement): unknown {

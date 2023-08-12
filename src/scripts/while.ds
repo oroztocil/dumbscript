@@ -6,3 +6,16 @@ while (answer != 42) {
 }
 
 print answer + "? Ahhh yess";
+
+answer = 45;
+
+while (true) {
+    print answer + "? That does not seem correct";
+    answer = answer - 1;
+
+    if (answer == 42) {
+        break;
+    }
+}
+
+print answer + "? Ahhh yess";
