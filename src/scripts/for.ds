@@ -1,0 +1,5 @@
+for (mut x = 35; x < 42; x = x + 1) {
+    print "Computing the answer (" + x + ")";
+}
+
+print "I have the answer now!";

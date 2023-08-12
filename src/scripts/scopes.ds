@@ -6,6 +6,7 @@ mut c = "global c";
   mut b = "outer b";
   {
     mut a = "inner a";
+    b = "modified b";
     print a;
     print b;
     print c;

@@ -1,7 +1,24 @@
 import { ParserError } from "./errors.ts";
-import { BinaryExpr, Expression, LiteralExpr, MutAssignmentExpr, ParenExpr, UnaryExpr, VariableExpr } from "./expression.ts";
+import {
+  BinaryExpr,
+  Expression,
+  LiteralExpr,
+  MutAssignmentExpr,
+  ParenExpr,
+  UnaryExpr,
+  VariableExpr,
+} from "./expression.ts";
 import { RuntimeContext } from "./runtime-context.ts";
-import { MutDeclarationStatement, ExpressionStatement, PrintStatement, Statement, ConstDeclarationStatement, BlockStatement } from "./statement.ts";
+import {
+  BlockStatement,
+  ConstDeclarationStatement,
+  ExpressionStatement,
+  IfStatement,
+  MutDeclarationStatement,
+  PrintStatement,
+  Statement,
+  WhileStatement,
+} from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
 
@@ -10,7 +27,7 @@ export class Parser {
     private readonly tokens: Token[],
     private readonly context: RuntimeContext,
     private current: number = 0,
-  ) { }
+  ) {}
 
   parse(): Statement[] {
     const statements: Statement[] = [];
@@ -47,9 +64,23 @@ export class Parser {
   }
 
   private statement(): Statement {
+    if (this.match(TokenType.IF)) {
+      return this.ifStatement();
+    }
+
+    if (this.match(TokenType.WHILE)) {
+      return this.whileStatement();
+    }
+
+    if (this.match(TokenType.FOR)) {
+      return this.forStatement();
+    }
+
     if (this.match(TokenType.PRINT)) {
       return this.print();
-    } else if (this.match(TokenType.LEFT_BRACE)) {
+    }
+
+    if (this.match(TokenType.LEFT_BRACE)) {
       const statements = this.block();
       return new BlockStatement(statements);
     }
@@ -67,7 +98,7 @@ export class Parser {
       }
     }
 
-    this.consume(TokenType.RIGHT_BRACE, "Expected '}' after block.")
+    this.consume(TokenType.RIGHT_BRACE, "Expected '}' after block.");
     return statements;
   }
 
@@ -75,6 +106,58 @@ export class Parser {
     const expr = this.expression();
     this.consume(TokenType.SEMICOLON, "Expected ';' after expression statement.");
     return new ExpressionStatement(expr);
+  }
+
+  private ifStatement(): IfStatement {
+    this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'.");
+    const condition = this.expression();
+    this.consume(TokenType.RIGHT_PAREN, "Expected ')' after 'if' condition.");
+
+    const thenBranch = this.statement();
+    const elseBranch = this.match(TokenType.ELSE) ? this.statement() : null;
+
+    return new IfStatement(condition, thenBranch, elseBranch);
+  }
+
+  private whileStatement(): WhileStatement {
+    this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'while'.");
+    const condition = this.expression();
+    this.consume(TokenType.RIGHT_PAREN, "Expected ')' after 'while' condition.");
+
+    const body = this.statement();
+
+    return new WhileStatement(condition, body);
+  }
+
+  private forStatement(): Statement {
+    this.consume(TokenType.LEFT_PAREN, "Expected '(' after 'for'.");
+    const initializer = this.match(TokenType.MUT)
+      ? this.mutDeclaration()
+      : !this.match(TokenType.SEMICOLON)
+      ? this.expressionStatement()
+      : null;
+
+    const condition = !this.check(TokenType.SEMICOLON) ? this.expression() : new LiteralExpr(true);
+
+    this.consume(TokenType.SEMICOLON, "Expected ';' after 'for' loop condition.");
+
+    const increment = !this.check(TokenType.RIGHT_PAREN) ? this.expression() : null;
+
+    this.consume(TokenType.RIGHT_PAREN, "Expected ')' after 'for' loop increment expression.");
+
+    let body: Statement = this.statement();
+
+    if (increment != null) {
+      body = new BlockStatement([body, new ExpressionStatement(increment)]);
+    }
+
+    body = new WhileStatement(condition, body);
+
+    if (initializer != null) {
+      body = new BlockStatement([initializer, body]);
+    }
+
+    return body;
   }
 
   private print(): PrintStatement {
@@ -94,9 +177,7 @@ export class Parser {
 
   private mutDeclaration(): MutDeclarationStatement {
     const name = this.consume(TokenType.IDENTIFIER, "Expected variable name.");
-    const initializer = this.match(TokenType.EQUAL)
-      ? this.expression()
-      : null;
+    const initializer = this.match(TokenType.EQUAL) ? this.expression() : null;
 
     this.consume(TokenType.SEMICOLON, "Expected ';' after variable declaration.");
     return new MutDeclarationStatement(name, initializer);

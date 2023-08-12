@@ -1,0 +1,8 @@
+mut answer = 35;
+
+while (answer != 42) {
+    print answer + "? That does not seem correct";
+    answer = answer + 1;
+}
+
+print answer + "? Ahhh yess";

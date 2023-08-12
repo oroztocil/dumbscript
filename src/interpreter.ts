@@ -12,13 +12,15 @@ import {
 import { RuntimeContext } from "./runtime-context.ts";
 import { Scope } from "./scope.ts";
 import {
-  MutDeclarationStatement,
+  BlockStatement,
+  ConstDeclarationStatement,
   ExpressionStatement,
+  IfStatement,
+  MutDeclarationStatement,
   PrintStatement,
   Statement,
   StatementVisitor,
-  ConstDeclarationStatement,
-  BlockStatement,
+  WhileStatement,
 } from "./statement.ts";
 import { TokenType } from "./token-type.ts";
 import { Token } from "./token.ts";
@@ -27,7 +29,7 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
   private readonly globalScope = new Scope(null);
   private currentScope = this.globalScope;
 
-  constructor(private readonly context: RuntimeContext) { }
+  constructor(private readonly context: RuntimeContext) {}
 
   interpret(statements: Statement[]) {
     try {
@@ -46,7 +48,25 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
 
   visitExpressionStatement(stmt: ExpressionStatement): unknown {
     this.evaluate(stmt.expr);
-    return undefined;
+    return null;
+  }
+
+  visitIf(stmt: IfStatement): unknown {
+    if (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.thenBranch);
+    } else if (stmt.elseBranch != null) {
+      this.execute(stmt.elseBranch);
+    }
+
+    return null;
+  }
+
+  visitWhile(stmt: WhileStatement): unknown {
+    while (this.isTruthy(this.evaluate(stmt.condition))) {
+      this.execute(stmt.body);
+    }
+
+    return null;
   }
 
   visitPrint(stmt: PrintStatement): unknown {
@@ -62,14 +82,11 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
   }
 
   visitMutDeclaration(stmt: MutDeclarationStatement): unknown {
-    const value = stmt.initializer != null
-      ? this.evaluate(stmt.initializer)
-      : null;
+    const value = stmt.initializer != null ? this.evaluate(stmt.initializer) : null;
 
     this.currentScope.define(stmt.name, value, true);
     return null;
   }
-
 
   visitMutAssignment(expr: MutAssignmentExpr): unknown {
     const value = this.evaluate(expr.value);
@@ -92,6 +109,10 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
       case TokenType.PLUS:
         if (typeof left === "string" && typeof right === "string") {
           return left + right;
+        } else if (typeof left === "string" && typeof right === "number") {
+          return left + right.toString();
+        } else if (typeof left === "number" && typeof right === "string") {
+          return left.toString() + right;
         } else if (typeof left === "number" && typeof right === "number") {
           return Number(left) + Number(right);
         } else {
