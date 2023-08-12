@@ -4,6 +4,7 @@ import {
   Expression,
   ExpressionVisitor,
   LiteralExpr,
+  LogicalExpr,
   MutAssignmentExpr,
   ParenExpr,
   UnaryExpr,
@@ -143,6 +144,21 @@ export class Interpreter implements ExpressionVisitor<unknown>, StatementVisitor
     }
 
     return null;
+  }
+
+  visitLogicalExpr(expr: LogicalExpr): unknown {
+    const left = this.evaluate(expr.left);
+    const leftIsTruthy = this.isTruthy(left);
+    
+    if (expr.operator.type == TokenType.AND && !leftIsTruthy) {
+      return left;
+    }
+
+    if (expr.operator.type == TokenType.OR && leftIsTruthy) {
+        return left;
+    }
+
+    return this.evaluate(expr.right);
   }
 
   visitLiteralExpr(expr: LiteralExpr): unknown {

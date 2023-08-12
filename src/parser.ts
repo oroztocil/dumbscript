@@ -3,6 +3,7 @@ import {
   BinaryExpr,
   Expression,
   LiteralExpr,
+  LogicalExpr,
   MutAssignmentExpr,
   ParenExpr,
   UnaryExpr,
@@ -184,7 +185,7 @@ export class Parser {
   }
 
   private mutAssignment(): Expression {
-    const expr = this.equality();
+    const expr = this.or();
 
     if (this.match(TokenType.EQUAL)) {
       const equals = this.previous();
@@ -203,6 +204,30 @@ export class Parser {
 
   private expression(): Expression {
     return this.mutAssignment();
+  }
+
+  private or(): Expression {
+    let expr: Expression = this.and();
+
+    while (this.match(TokenType.OR)) {
+      const operator = this.previous();
+      const right = this.and();
+      expr = new LogicalExpr(operator, expr, right);
+    }
+
+    return expr;
+  }
+
+  private and(): Expression {
+    let expr: Expression = this.equality();
+
+    while (this.match(TokenType.AND)) {
+      const operator = this.previous();
+      const right = this.equality();
+      expr = new LogicalExpr(operator, expr, right);
+    }
+
+    return expr;
   }
 
   private equality(): Expression {

@@ -1,0 +1,3 @@
+const result = 42 > 41 and "password" == "pass" + "word";
+
+print result;

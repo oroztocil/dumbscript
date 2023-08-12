@@ -2,6 +2,7 @@ import { Token } from "./token.ts";
 
 export interface ExpressionVisitor<T> {
   visitBinaryExpr(expr: BinaryExpr): T;
+  visitLogicalExpr(expr: LogicalExpr): T;
   visitLiteralExpr(expr: LiteralExpr): T;
   visitParenExpr(expr: ParenExpr): T;
   visitUnaryExpr(expr: UnaryExpr): T;
@@ -22,6 +23,18 @@ export class BinaryExpr implements Expression {
 
   accept<T>(visitor: ExpressionVisitor<T>): T {
     return visitor.visitBinaryExpr(this);
+  }
+}
+
+export class LogicalExpr implements Expression {
+  constructor(
+    public readonly operator: Token,
+    public readonly left: Expression,
+    public readonly right: Expression,
+  ) {}
+
+  accept<T>(visitor: ExpressionVisitor<T>): T {
+    return visitor.visitLogicalExpr(this);
   }
 }
 
